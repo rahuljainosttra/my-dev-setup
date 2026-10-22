@@ -1,0 +1,29 @@
+# Base Git Configuration
+# Local/machine-specific settings (user.name, user.email, url rewrites) belong in ~/.gitconfig.local
+
+[include]
+	path = ~/.gitconfig.local
+
+[core]
+	editor = nvim
+	autocrlf = input
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = true
+
+[push]
+	autoSetupRemote = true
+
+[color]
+	ui = auto
+
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
