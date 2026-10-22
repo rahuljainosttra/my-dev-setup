@@ -6,8 +6,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/common.sh"
 
-TARGET_USER="${SUDO_USER:-$USER}"
-
 log_info "Running 01-docker.sh: Configuring official Docker CE repository..."
 
 if has_cmd docker && docker --version >/dev/null 2>&1; then

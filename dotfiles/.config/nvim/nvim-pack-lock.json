@@ -45,7 +45,7 @@
       "src": "https://github.com/rafamadriz/friendly-snippets"
     },
     "gitsigns.nvim": {
-      "rev": "fd780920613e541cbdfac41bf711583ed49f9249",
+      "rev": "683137003522aebd6948358334164a6ba2ca7cd5",
       "src": "https://github.com/lewis6991/gitsigns.nvim"
     },
     "indent-blankline.nvim": {
@@ -65,7 +65,7 @@
       "src": "https://github.com/nvim-lualine/lualine.nvim"
     },
     "mason-lspconfig.nvim": {
-      "rev": "27b98a54bc04d2e8649d2e701c89aec0d02c11a4",
+      "rev": "c4ef013d41f6db041b283eef55a63e579d76763f",
       "src": "https://github.com/williamboman/mason-lspconfig.nvim"
     },
     "mason-tool-installer.nvim": {

@@ -6,6 +6,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/scripts/lib/common.sh"
 
+# Prevent running master setup script directly as root (unless explicitly allowed in containers/CI)
+ALLOW_ROOT="${ALLOW_ROOT:-0}"
+for arg in "$@"; do
+    if [ "$arg" = "--allow-root" ]; then
+        ALLOW_ROOT=1
+        break
+    fi
+done
+
+if [ "$EUID" -eq 0 ] && [ "${ALLOW_ROOT}" != "1" ]; then
+    log_error "Do not run setup.sh as root or with sudo."
+    log_error "Run as your normal user: ./setup.sh (sudo credentials will be requested when needed)"
+    log_error "If running in a Docker container or CI environment as root, pass --allow-root or set ALLOW_ROOT=1."
+    exit 1
+fi
+
 show_help() {
     cat <<EOF
 Usage: ./setup.sh [OPTIONS]
@@ -18,14 +34,16 @@ Options:
   --docker         Install Docker CE and add user to docker group
   --zsh            Setup Zsh, Oh My Zsh, Powerlevel10k, and plugins
   --fonts          Install MesloLGS NF and JetBrainsMono Nerd Fonts
-  --asdf           Install asdf, plugins, runtimes (Go, Node, Python), and tools (Neovim, Tmux, kubectl)
   --dotfiles       Safely backup and symlink dotfiles into \$HOME
+  --mise           Install mise, runtimes (Go, Node, Python, Java), and CLI/DevOps tools
+  --cleanup        Clean up legacy system packages (APT, Snap, /usr/local/bin) superseded by mise
+  --allow-root     Allow running setup as root (e.g. inside containers or CI)
   -h, --help       Show this help message and exit
 
 Examples:
   ./setup.sh                 # Full end-to-end setup
   ./setup.sh --dotfiles      # Re-link dotfiles only
-  ./setup.sh --asdf          # Re-install or update asdf runtimes
+  ./setup.sh --mise          # Re-install or update mise runtimes
 EOF
 }
 
@@ -34,16 +52,17 @@ RUN_PACKAGES=false
 RUN_DOCKER=false
 RUN_ZSH=false
 RUN_FONTS=false
-RUN_ASDF=false
 RUN_DOTFILES=false
+RUN_MISE=false
+RUN_CLEANUP=false
 
 if [ $# -eq 0 ]; then
     RUN_PACKAGES=true
     RUN_DOCKER=true
     RUN_ZSH=true
     RUN_FONTS=true
-    RUN_ASDF=true
     RUN_DOTFILES=true
+    RUN_MISE=true
 else
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -52,8 +71,8 @@ else
                 RUN_DOCKER=true
                 RUN_ZSH=true
                 RUN_FONTS=true
-                RUN_ASDF=true
                 RUN_DOTFILES=true
+                RUN_MISE=true
                 shift
                 ;;
             --packages)
@@ -72,12 +91,20 @@ else
                 RUN_FONTS=true
                 shift
                 ;;
-            --asdf)
-                RUN_ASDF=true
+            --mise)
+                RUN_MISE=true
                 shift
                 ;;
             --dotfiles)
                 RUN_DOTFILES=true
+                shift
+                ;;
+            --cleanup)
+                RUN_CLEANUP=true
+                shift
+                ;;
+            --allow-root)
+                ALLOW_ROOT=1
                 shift
                 ;;
             -h|--help)
@@ -104,7 +131,7 @@ printf "${COLOR_RESET}\n"
 START_TIME=$(date +%s)
 
 # If operations requiring root are scheduled, initialize sudo once
-if [ "$RUN_PACKAGES" = true ] || [ "$RUN_DOCKER" = true ] || [ "$RUN_ZSH" = true ]; then
+if [ "$RUN_PACKAGES" = true ] || [ "$RUN_DOCKER" = true ] || [ "$RUN_ZSH" = true ] || [ "$RUN_CLEANUP" = true ]; then
     init_sudo
 fi
 
@@ -124,12 +151,16 @@ if [ "$RUN_FONTS" = true ]; then
     "${SCRIPT_DIR}/scripts/03-fonts.sh"
 fi
 
-if [ "$RUN_ASDF" = true ]; then
-    "${SCRIPT_DIR}/scripts/04-asdf.sh"
-fi
-
 if [ "$RUN_DOTFILES" = true ]; then
     "${SCRIPT_DIR}/scripts/05-dotfiles.sh"
+fi
+
+if [ "$RUN_MISE" = true ]; then
+    "${SCRIPT_DIR}/scripts/04-mise.sh"
+fi
+
+if [ "$RUN_CLEANUP" = true ]; then
+    "${SCRIPT_DIR}/scripts/cleanup-legacy.sh"
 fi
 
 END_TIME=$(date +%s)
