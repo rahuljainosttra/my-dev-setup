@@ -6,8 +6,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/common.sh"
 
-TARGET_USER="${SUDO_USER:-$USER}"
-TARGET_HOME="$(eval echo "~${TARGET_USER}")"
 FONTS_DIR="${TARGET_HOME}/.local/share/fonts/NerdFonts"
 
 log_info "Running 03-fonts.sh: Setting up Nerd Fonts in ${FONTS_DIR}..."
@@ -37,9 +35,11 @@ if [ ! -d "${JB_DIR}" ]; then
     log_info "Downloading JetBrains Mono Nerd Font..."
     mkdir -p "${JB_DIR}"
     TEMP_ARCHIVE="$(mktemp /tmp/jetbrains-mono-XXXXXX.tar.xz)"
+    trap 'rm -f "${TEMP_ARCHIVE:-}"' EXIT INT TERM
     curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz" -o "${TEMP_ARCHIVE}"
     tar -xf "${TEMP_ARCHIVE}" -C "${JB_DIR}"
     rm -f "${TEMP_ARCHIVE}"
+    trap - EXIT INT TERM
     log_success "JetBrains Mono Nerd Font extracted."
 else
     log_info "JetBrains Mono Nerd Font already present."

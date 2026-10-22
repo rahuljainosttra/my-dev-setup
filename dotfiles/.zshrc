@@ -1,3 +1,12 @@
+# Auto-start tmux for interactive terminal sessions
+if [[ -z "$TMUX" && -z "$NO_TMUX" && -o interactive && "$TERM_PROGRAM" != "vscode" ]]; then
+    if command -v tmux >/dev/null 2>&1; then
+        exec tmux new-session -A -s main
+    elif command -v mise >/dev/null 2>&1; then
+        exec mise exec -- tmux new-session -A -s main
+    fi
+fi
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -36,7 +45,6 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
-# werlevel10k/powerlevel10k"
 # zstyle ':omz:update' frequency 13
 
 # Uncomment the following line if pasting URLs and other text is messed up.
@@ -84,8 +92,7 @@ plugins=(git
 	zsh-syntax-highlighting
 	z
 	kubectl
-	zsh-vi-mode
-        asdf)
+	zsh-vi-mode)
 
 
 # User configuration
@@ -117,34 +124,28 @@ plugins=(git
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-#export PATH="$PATH:/opt/nvim-linux64/bin/:/home/rahulj/.local/bin:/home/rahulj/.asdf:/home/rahulj/.asdf/installs/golang/1.24.2/packages/bin"
-export PATH="$PATH:/home/rahulj/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 source $ZSH/oh-my-zsh.sh
 
 export GOOGLE_CLOUD_PROJECT="prj-c-platformtools-fn8z"
-export NODE_EXTRA_CA_CERTS="/home/rahulj/cacerts/trioptima-ad-root-ca.crt"
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
-# --- CA Certificate Configuration for Dev Tools ---
-# # Most tools will use one of the variables below to trust your custom CA.
-#
-# # Generic variable for Go, Rust, .NET Core, and other tools
- export SSL_CERT_FILE="/home/rahulj/cacerts/cabundle.pem"
-#
-# # Node.js
- export NODE_EXTRA_CA_CERTS="/home/rahulj/cacerts/cabundle.pem"
-#
-# # cURL & Git
- export CURL_CA_BUNDLE="/home/rahulj/cacerts/cabundle.pem"
- export GIT_SSL_CAINFO="/home/rahulj/cacerts/cabundle.pem"
-#
-# # Python (Requests library, pip, uv)
- export REQUESTS_CA_BUNDLE="/home/rahulj/cacerts/cabundle.pem"
- export PIP_CERT="/home/rahulj/cacerts/cabundle.pem"
- export UV_CA_BUNDLE="/home/rahulj/cacerts/cabundle.pem"
-#
-export HTTPLIB2_CA_CERTS="/home/rahulj/cacerts/cabundle.pem"
+# mise tool manager (default activated mode)
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh)"
+fi
+
+# --- CA Certificate Configuration for Corporate / Custom CA ---
+if [[ -f "$HOME/cacerts/cabundle.pem" ]]; then
+    export SSL_CERT_FILE="$HOME/cacerts/cabundle.pem"
+    export NODE_EXTRA_CA_CERTS="$HOME/cacerts/cabundle.pem"
+    export CURL_CA_BUNDLE="$HOME/cacerts/cabundle.pem"
+    export GIT_SSL_CAINFO="$HOME/cacerts/cabundle.pem"
+    export REQUESTS_CA_BUNDLE="$HOME/cacerts/cabundle.pem"
+    export PIP_CERT="$HOME/cacerts/cabundle.pem"
+    export UV_CA_BUNDLE="$HOME/cacerts/cabundle.pem"
+    export HTTPLIB2_CA_CERTS="$HOME/cacerts/cabundle.pem"
+fi
 
 # --- Dynamic Terminal Background Color for Kube Context ---
 # Automatically changes terminal background when current context contains 'trisettle-prod'
@@ -176,8 +177,17 @@ _update_terminal_bg_for_kube_context() {
 # Hook into Zsh precmd so this executes before every prompt rendering
 autoload -Uz add-zsh-hook
 add-zsh-hook precmd _update_terminal_bg_for_kube_context
-export GITHUB_TOKEN=$(gh auth token)
 
+# GitHub CLI Token (safe lazy export if authenticated)
+if [[ -z "${GITHUB_TOKEN:-}" ]] && command -v gh >/dev/null 2>&1; then
+    _gh_token="$(gh auth token 2>/dev/null || true)"
+    if [[ -n "$_gh_token" ]]; then
+        export GITHUB_TOKEN="$_gh_token"
+    fi
+    unset _gh_token
+fi
 
-# Added by Antigravity CLI installer
-export PATH="/home/rahulj/.local/bin:$PATH"
+# Machine-local overrides (private tokens, local aliases, paths)
+if [[ -f "$HOME/.zshrc.local" ]]; then
+    source "$HOME/.zshrc.local"
+fi

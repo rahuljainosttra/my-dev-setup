@@ -103,21 +103,66 @@ require("plugins.lsp.lspconfig")
 require("plugins.lspsaga")
 require("plugins.lspimport")
 
+local function should_auto_update()
+	local interval = vim.g.pack_auto_update_interval or 86400 -- 1 day in seconds
+	if interval <= 0 then
+		return true
+	end
+
+	local uv = vim.uv or vim.loop
+	local stamp_file = vim.fn.stdpath("state") .. "/pack_last_update"
+	local stat = uv.fs_stat(stamp_file)
+	if not stat then
+		return true
+	end
+
+	local last_time = stat.mtime and stat.mtime.sec or 0
+	return (os.time() - last_time) >= interval
+end
+
+local function record_update_timestamp()
+	local uv = vim.uv or vim.loop
+	local state_dir = vim.fn.stdpath("state")
+	local stamp_file = state_dir .. "/pack_last_update"
+
+	if not uv.fs_stat(state_dir) then
+		vim.fn.mkdir(state_dir, "p")
+	end
+
+	local fd = uv.fs_open(stamp_file, "w", 438) -- 0666 octal
+	if fd then
+		uv.fs_write(fd, tostring(os.time()) .. "\n")
+		uv.fs_close(fd)
+	end
+end
+
 -- User command to manually update plugins
 vim.api.nvim_create_user_command("PackUpdate", function(opts)
 	local force = opts.bang
+	record_update_timestamp()
 	vim.pack.update(nil, { force = force })
 end, { bang = true, desc = "Update plugins with vim.pack (! to force without prompt)" })
 
--- Auto-update plugins on startup
+-- Auto-update plugins on startup (at most once per day)
 vim.api.nvim_create_autocmd("VimEnter", {
 	group = vim.api.nvim_create_augroup("PackAutoUpdate", { clear = true }),
 	callback = function()
-		-- Skip in headless mode, diff mode, or when explicitly disabled
-		if #vim.api.nvim_list_uis() == 0 or vim.o.diff or vim.g.pack_auto_update == false then
+		-- Skip in headless mode, diff mode, when explicitly disabled, or if checked recently
+		if
+			#vim.api.nvim_list_uis() == 0
+			or vim.o.diff
+			or vim.g.pack_auto_update == false
+			or vim.env.NVIM_NO_UPDATE == "1"
+		then
 			return
 		end
+
+		if not should_auto_update() then
+			return
+		end
+
 		vim.schedule(function()
+			record_update_timestamp()
 			local force = vim.g.pack_auto_update_force or false
 			vim.pack.update(nil, { force = force })
 		end)

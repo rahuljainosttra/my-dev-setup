@@ -6,8 +6,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/common.sh"
 
-TARGET_USER="${SUDO_USER:-$USER}"
-TARGET_HOME="$(eval echo "~${TARGET_USER}")"
 ZSH_BIN="$(command -v zsh || echo "/usr/bin/zsh")"
 
 log_info "Running 02-zsh.sh: Configuring Zsh for ${TARGET_USER}..."

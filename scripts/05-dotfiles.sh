@@ -9,8 +9,6 @@ source "${SCRIPT_DIR}/lib/common.sh"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DOTFILES_DIR="${REPO_ROOT}/dotfiles"
 
-TARGET_USER="${SUDO_USER:-$USER}"
-TARGET_HOME="$(eval echo "~${TARGET_USER}")"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 BACKUP_DIR="${TARGET_HOME}/.dotfiles_backup/${TIMESTAMP}"
 HAS_BACKUPS=false
@@ -84,16 +82,39 @@ else
     log_info "Existing ${GITCONFIG_LOCAL} preserved."
 fi
 
-# 2. Symlink root-level dotfiles
+# 2. Setup ~/.zshrc.local if not present (to hold machine-specific overrides)
+ZSHRC_LOCAL="${TARGET_HOME}/.zshrc.local"
+if [ ! -f "${ZSHRC_LOCAL}" ]; then
+    touch "${ZSHRC_LOCAL}"
+    log_info "Created empty ${ZSHRC_LOCAL} for machine-local shell overrides."
+fi
+
+# 3. Symlink root-level dotfiles
 safe_symlink "${DOTFILES_DIR}/.zshrc" "${TARGET_HOME}/.zshrc"
 safe_symlink "${DOTFILES_DIR}/.p10k.zsh" "${TARGET_HOME}/.p10k.zsh"
 safe_symlink "${DOTFILES_DIR}/.tmux.conf" "${TARGET_HOME}/.tmux.conf"
-safe_symlink "${DOTFILES_DIR}/.tool-versions" "${TARGET_HOME}/.tool-versions"
 safe_symlink "${DOTFILES_DIR}/.gitconfig" "${TARGET_HOME}/.gitconfig"
 
 # 3. Symlink .config directories
 if [ -d "${DOTFILES_DIR}/.config/nvim" ]; then
     safe_symlink "${DOTFILES_DIR}/.config/nvim" "${TARGET_HOME}/.config/nvim"
+fi
+if [ -f "${DOTFILES_DIR}/.config/mise/config.toml" ]; then
+    safe_symlink "${DOTFILES_DIR}/.config/mise/config.toml" "${TARGET_HOME}/.config/mise/config.toml"
+fi
+
+# 4. Tmux Plugin Manager (TPM)
+TPM_DIR="${TARGET_HOME}/.tmux/plugins/tpm"
+if [ ! -d "${TPM_DIR}" ]; then
+    log_info "Installing Tmux Plugin Manager (TPM) to ${TPM_DIR}..."
+    if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+        sudo -u "${TARGET_USER}" git clone --depth=1 https://github.com/tmux-plugins/tpm "${TPM_DIR}"
+    else
+        git clone --depth=1 https://github.com/tmux-plugins/tpm "${TPM_DIR}"
+    fi
+    log_success "TPM installed."
+else
+    log_info "TPM already installed at ${TPM_DIR}."
 fi
 
 if [ "$HAS_BACKUPS" = true ]; then

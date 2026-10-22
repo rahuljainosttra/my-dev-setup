@@ -15,8 +15,6 @@ PACKAGES=(
     wget
     git
     zsh
-    ripgrep
-    jq
     unzip
     tar
     ca-certificates
@@ -24,7 +22,7 @@ PACKAGES=(
     software-properties-common
     fontconfig
 
-    # Build essentials & libraries for asdf language/tool compilation (python, tmux, etc.)
+    # Build essentials & libraries for tool compilation (python, tmux, etc.)
     build-essential
     bison
     pkg-config
