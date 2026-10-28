@@ -306,25 +306,10 @@ if [ "$UNINSTALL_MISE" = true ]; then
             fi
         fi
     done
-else
-    # Superseded mise tools
-    if has_cmd mise && [ -d "${TARGET_HOME}/.local/share/mise/installs/pre-commit" ]; then
-        if [ "$DRY_RUN" = true ]; then
-            log_info "[DRY-RUN] Would uninstall obsolete mise tool: pre-commit"
-        else
-            log_info "Uninstalling obsolete mise tool: pre-commit..."
-            mise uninstall pre-commit
-            mise reshim
-            log_success "Obsolete mise tool pre-commit removed."
-        fi
-    fi
 fi
 
-# 8. Legacy tool caches and runtime directories (superseded by uv/prek)
+# 8. Legacy tool caches and runtime directories
 CACHE_REMOVALS=(
-    "${TARGET_HOME}/.cache/pre-commit"
-    "${TARGET_HOME}/.cache/pre-commit-zipapp"
-    "${TARGET_HOME}/.cache/mise/pre-commit"
     "${TARGET_HOME}/.cache/pip"
     "${TARGET_HOME}/.cache/virtualenv"
 )
