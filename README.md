@@ -21,7 +21,7 @@ An idempotent, declarative bootstrap configuration and dotfiles manager for sett
 
 ```
 .
-├── mise.toml                # Root symlink to dotfiles/.config/mise/config.toml
+├── mise.toml                # Workstation bootstrap config: [bootstrap], [dotfiles], [tools], [tasks]
 ├── setup.sh                 # Master setup orchestrator (runs mise bootstrap by default)
 ├── README.md                # Documentation
 ├── scripts/
@@ -34,7 +34,7 @@ An idempotent, declarative bootstrap configuration and dotfiles manager for sett
     ├── .gitconfig           # Base Git configuration (includes ~/.gitconfig.local)
     └── .config/
         ├── mise/
-        │   └── config.toml  # Canonical mise config: [bootstrap], [dotfiles], [tools], [tasks]
+        │   └── config.toml  # User global mise config: [tools], [tasks], [settings]
         └── nvim/            # Neovim configuration
             └── KEYBINDINGS.md # Neovim shortcuts cheatsheet
 ```
@@ -141,7 +141,7 @@ To clean up legacy system packages (APT, Snap, `/usr/local/bin`) superseded by `
 
 ## 🔗 Dotfiles & Symlinks
 
-Dotfiles are declared in `[dotfiles]` within `dotfiles/.config/mise/config.toml`:
+Dotfiles are declared in `[dotfiles]` within `mise.toml`:
 - Dotfiles are linked directly to `$HOME`:
   - `~/.zshrc` -> `dotfiles/.zshrc`
   - `~/.p10k.zsh` -> `dotfiles/.p10k.zsh`

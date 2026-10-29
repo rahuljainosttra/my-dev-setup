@@ -15,7 +15,7 @@ TARGET_HOME="${HOME:-~}"
 TARGET_USER="${SUDO_USER:-${USER:-$(id -un 2>/dev/null || whoami)}}"
 
 DRY_RUN=false
-UNINSTALL_MISE=false
+UNINSTALL_MISE=true
 UNINSTALL_DOCKER=false
 
 show_help() {
@@ -27,7 +27,6 @@ Safely clean up legacy system packages and binaries superseded by mise.
 Options:
   --all               Completely remove legacy packages, mise, and Docker
   --dry-run           Simulate cleanup without making any changes
-  --uninstall-mise    Completely remove mise CLI, runtimes, caches, and configuration
   --uninstall-docker  Completely remove Docker CE, rootless service, containers, and data
   -h, --help          Show this help message and exit
 
@@ -36,7 +35,6 @@ Examples:
   ./scripts/cleanup-legacy.sh
   ./scripts/cleanup-legacy.sh --all --dry-run
   ./scripts/cleanup-legacy.sh --all
-  ./scripts/cleanup-legacy.sh --uninstall-mise --dry-run
   ./scripts/cleanup-legacy.sh --uninstall-docker --dry-run
 EOF
 }
@@ -88,6 +86,9 @@ LOCAL_REMOVALS=(
     "${LOCAL_BIN}/powerline-lint"
     "${LOCAL_BIN}/powerline-render"
     "${LOCAL_BIN}/chardetect"
+    "${LOCAL_BIN}/gcloud"
+    "${LOCAL_BIN}/gsutil"
+    "${LOCAL_BIN}/bq"
 )
 
 for file in "${LOCAL_REMOVALS[@]}"; do
@@ -174,11 +175,20 @@ APT_PACKAGES=(
     helm
     vault
     pre-commit
+    google-cloud-cli
+    google-cloud-sdk
 )
 
 INSTALLED_APT=()
 for pkg in "${APT_PACKAGES[@]}"; do
     if dpkg -l "${pkg}" 2>/dev/null | grep -q "^ii"; then
+        INSTALLED_APT+=("${pkg}")
+    fi
+done
+
+# Also discover any installed Google Cloud CLI components (e.g. google-cloud-cli-*)
+for pkg in $(dpkg -l "google-cloud-*" 2>/dev/null | awk '/^ii/{print $2}'); do
+    if [[ ! " ${INSTALLED_APT[*]} " =~ " ${pkg} " ]]; then
         INSTALLED_APT+=("${pkg}")
     fi
 done
@@ -196,11 +206,76 @@ else
     log_info "No superseded APT packages found."
 fi
 
-# 5. Snap packages superseded by mise / obsolete
+# 5. Legacy Docker APT sources and signing keys (superseded by declarative mise-docker.sources)
+LEGACY_DOCKER_SOURCES=(
+    /etc/apt/sources.list.d/docker.list
+    /etc/apt/sources.list.d/docker.list.disabled
+    /etc/apt/sources.list.d/docker.list.save
+    /etc/apt/keyrings/docker.asc
+    /etc/apt/trusted.gpg.d/docker.gpg
+)
+
+FOUND_LEGACY_DOCKER=()
+for src in "${LEGACY_DOCKER_SOURCES[@]}"; do
+    if [ -e "${src}" ] || [ -L "${src}" ]; then
+        FOUND_LEGACY_DOCKER+=("${src}")
+    fi
+done
+
+if [ ${#FOUND_LEGACY_DOCKER[@]} -gt 0 ]; then
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would remove conflicting legacy Docker APT source(s)/key(s): ${FOUND_LEGACY_DOCKER[*]}"
+    else
+        log_info "Removing conflicting legacy Docker APT source(s)/key(s): ${FOUND_LEGACY_DOCKER[*]}..."
+        for src in "${FOUND_LEGACY_DOCKER[@]}"; do
+            sudo rm -f "${src}"
+        done
+        log_success "Conflicting legacy Docker APT sources/keys removed."
+    fi
+else
+    log_info "No conflicting legacy Docker APT sources found."
+fi
+
+# 5b. Legacy Google Cloud SDK APT sources and signing keys (superseded by mise gcloud)
+LEGACY_GCLOUD_SOURCES=(
+    /etc/apt/sources.list.d/google-cloud-sdk.list
+    /etc/apt/sources.list.d/google-cloud-sdk.list.save
+    /etc/apt/sources.list.d/google-cloud-sdk.list.distUpgrade
+    /etc/apt/sources.list.d/google-cloud-sdk.sources
+    /usr/share/keyrings/cloud.google.gpg
+    /usr/share/keyrings/cloud.google.gpg~
+    /etc/apt/trusted.gpg.d/cloud.google.gpg
+    /etc/apt/keyrings/google-cloud-sdk.gpg
+)
+
+FOUND_LEGACY_GCLOUD=()
+for src in "${LEGACY_GCLOUD_SOURCES[@]}"; do
+    if [ -e "${src}" ] || [ -L "${src}" ]; then
+        FOUND_LEGACY_GCLOUD+=("${src}")
+    fi
+done
+
+if [ ${#FOUND_LEGACY_GCLOUD[@]} -gt 0 ]; then
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would remove legacy Google Cloud SDK APT source(s)/key(s): ${FOUND_LEGACY_GCLOUD[*]}"
+    else
+        log_info "Removing legacy Google Cloud SDK APT source(s)/key(s): ${FOUND_LEGACY_GCLOUD[*]}..."
+        for src in "${FOUND_LEGACY_GCLOUD[@]}"; do
+            sudo rm -f "${src}"
+        done
+        log_success "Legacy Google Cloud SDK APT sources/keys removed."
+    fi
+else
+    log_info "No legacy Google Cloud SDK APT sources found."
+fi
+
+# 6. Snap packages superseded by mise / obsolete
 SNAP_PACKAGES=(
     kubectl
     yq
     cqlsh
+    google-cloud-cli
+    google-cloud-sdk
 )
 
 if has_cmd snap; then
@@ -236,7 +311,7 @@ if has_cmd snap; then
     fi
 fi
 
-# 6. Outdated standalone binaries and global node modules in /usr/local
+# 7. Outdated standalone binaries and global node modules in /usr/local
 USR_LOCAL_BIN_SUPERSEDED=(
     /usr/local/bin/kubectl
     /usr/local/bin/flux
@@ -250,6 +325,9 @@ USR_LOCAL_BIN_SUPERSEDED=(
     /usr/local/bin/yarn
     /usr/local/bin/yarnpkg
     /usr/local/bin/instant-markdown-d
+    /usr/local/bin/gcloud
+    /usr/local/bin/gsutil
+    /usr/local/bin/bq
     /usr/local/lib/node_modules/instant-markdown-d
     /usr/local/lib/node_modules/npx
     /usr/local/lib/node_modules/yarn
@@ -266,21 +344,33 @@ for bin_path in "${USR_LOCAL_BIN_SUPERSEDED[@]}"; do
     fi
 done
 
-# 7. Mise cleanup / superseded tools
+# 8. Mise cleanup / superseded tools
 if [ "$UNINSTALL_MISE" = true ]; then
     log_info "Evaluating complete removal of mise..."
     if has_cmd mise; then
         if [ "$DRY_RUN" = true ]; then
-            log_info "[DRY-RUN] Would run 'mise implode --config' to remove mise:"
+            log_info "[DRY-RUN] Would run 'mise implode --config' to remove mise runtimes and shims:"
             mise implode --dry-run --config 2>/dev/null || true
         else
-            log_info "Running 'mise implode --yes --config' to remove mise..."
+            log_info "Running 'mise implode --yes --config' to remove mise runtimes and shims..."
             mise implode --yes --config || true
             log_success "mise imploded successfully."
         fi
     fi
 
-    # Ensure all mise directories and binaries are removed (fallback / cleanup)
+    # Remove APT package if installed via APT
+    if dpkg -l mise 2>/dev/null | grep -q "^ii"; then
+        if [ "$DRY_RUN" = true ]; then
+            log_info "[DRY-RUN] Would remove mise APT package"
+        else
+            log_info "Removing mise APT package..."
+            sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y mise
+            sudo apt-get autoremove -y
+            log_success "Removed mise APT package."
+        fi
+    fi
+
+    # Ensure all mise directories, binaries, APT sources, and keyrings are removed
     MISE_PATHS=(
         "${TARGET_HOME}/.local/share/mise"
         "${TARGET_HOME}/.local/state/mise"
@@ -289,13 +379,13 @@ if [ "$UNINSTALL_MISE" = true ]; then
         "${TARGET_HOME}/.local/bin/mise"
         "/usr/local/bin/mise"
         "/usr/local/share/mise"
+        "/etc/apt/sources.list.d/mise.list"
+        "/etc/apt/keyrings/mise-archive-keyring.gpg"
     )
     for path in "${MISE_PATHS[@]}"; do
         if [ -e "${path}" ] || [ -L "${path}" ]; then
             if [ "$DRY_RUN" = true ]; then
-                if ! has_cmd mise; then
-                    log_info "[DRY-RUN] Would remove leftover mise directory/file: ${path}"
-                fi
+                log_info "[DRY-RUN] Would remove leftover mise directory/file: ${path}"
             else
                 if [ -w "$(dirname "${path}")" ]; then
                     rm -rf "${path}"
@@ -308,7 +398,7 @@ if [ "$UNINSTALL_MISE" = true ]; then
     done
 fi
 
-# 8. Legacy tool caches and runtime directories
+# 9. Legacy tool caches and runtime directories
 CACHE_REMOVALS=(
     "${TARGET_HOME}/.cache/pip"
     "${TARGET_HOME}/.cache/virtualenv"
@@ -325,7 +415,7 @@ for cache_path in "${CACHE_REMOVALS[@]}"; do
     fi
 done
 
-# 9. Clean APT package cache
+# 10. Clean APT package cache
 if has_cmd apt-get; then
     if [ "$DRY_RUN" = true ]; then
         log_info "[DRY-RUN] Would clean APT archive cache (apt-get clean)"
@@ -336,7 +426,7 @@ if has_cmd apt-get; then
     fi
 fi
 
-# 10. Docker cleanup
+# 11. Docker cleanup
 if [ "$UNINSTALL_DOCKER" = true ]; then
     log_info "Evaluating complete removal of Docker..."
 
