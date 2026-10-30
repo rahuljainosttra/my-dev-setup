@@ -110,6 +110,7 @@ url = "https://github.com/tmux-plugins/tpm"
 "apt:software-properties-common" = "latest"
 "apt:fontconfig" = "latest"
 "apt:wl-clipboard" = "latest"
+"apt:flatpak" = "latest"
 
 # Build essentials & libraries for tool compilation (python, tmux, etc.)
 "apt:build-essential" = "latest"
@@ -207,9 +208,38 @@ if command -v fc-cache >/dev/null 2>&1; then
 fi
 """
 
+[tasks.obsidian]
+description = "Install Obsidian non-root via Flatpak (--user)"
+run = """
+if ! command -v flatpak >/dev/null 2>&1; then
+    echo "[ERROR] flatpak CLI is not installed." >&2
+    echo "Please run './setup.sh --packages' or 'sudo apt-get install -y flatpak' first." >&2
+    exit 1
+fi
+
+echo "[INFO] Configuring Flathub remote for current user..."
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+if flatpak list --user --app 2>/dev/null | grep -q "md\\.obsidian\\.Obsidian"; then
+    echo "[INFO] Obsidian is already installed via Flatpak."
+else
+    echo "[INFO] Installing md.obsidian.Obsidian via Flatpak (non-root --user)..."
+    flatpak install --user -y flathub md.obsidian.Obsidian
+fi
+
+# Ensure ~/.local/bin is present and create a CLI launcher shim
+mkdir -p "${HOME}/.local/bin"
+cat <<'EOF' > "${HOME}/.local/bin/obsidian"
+#!/usr/bin/env bash
+exec flatpak run md.obsidian.Obsidian "$@"
+EOF
+chmod +x "${HOME}/.local/bin/obsidian"
+echo "[OK] Obsidian installed successfully. Run with 'obsidian' or launch from desktop menu."
+"""
+
 [tasks.bootstrap]
-description = "Install fonts and run post-bootstrap tasks"
-depends = ["fonts"]
+description = "Install fonts, Obsidian, and run post-bootstrap tasks"
+depends = ["fonts", "obsidian"]
 run = "echo 'Workstation bootstrap finished successfully!'"
 
 [settings.python]

@@ -65,6 +65,7 @@ Options:
   --plan             Show planned resource changes without applying ('mise bootstrap plan')
   --dry-run          Simulate execution without applying changes ('mise bootstrap --dry-run')
   --fonts            Install MesloLGS NF fonts ('mise run fonts')
+  --obsidian         Install Obsidian via Flatpak ('mise run obsidian')
   --dotfiles         Symlink dotfiles only ('mise bootstrap --only dotfiles')
   --packages         Install system APT packages only ('mise bootstrap --only packages')
   --tools            Install developer runtimes and tools only ('mise bootstrap --only tools')
@@ -101,6 +102,10 @@ while [ $# -gt 0 ]; do
             ;;
         --fonts)
             MODE="fonts"
+            shift
+            ;;
+        --obsidian)
+            MODE="obsidian"
             shift
             ;;
         --dotfiles)
@@ -155,6 +160,10 @@ case "$MODE" in
         log_info "Installing fonts via mise run fonts..."
         mise -C "${SCRIPT_DIR}" run fonts
         ;;
+    obsidian)
+        log_info "Installing Obsidian via mise run obsidian..."
+        mise -C "${SCRIPT_DIR}" run obsidian
+        ;;
     dotfiles)
         log_info "Applying dotfiles symlinks..."
         mise -C "${SCRIPT_DIR}" bootstrap --only dotfiles --force-dotfiles "${EXTRA_ARGS[@]}"
@@ -191,4 +200,5 @@ echo "  1. Switch to Zsh or restart your terminal: exec zsh"
 echo "  2. Activate docker group permissions (if newly added): newgrp docker"
 echo "  3. Configure your terminal font to MesloLGS NF"
 echo "  4. Launch Neovim ('nvim') to let plugins initialize"
+echo "  5. Launch Obsidian ('obsidian') for note-taking"
 echo ""

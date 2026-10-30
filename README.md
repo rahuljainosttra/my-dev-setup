@@ -11,6 +11,7 @@ An idempotent, declarative bootstrap configuration and dotfiles manager for sett
 - **Docker CE**: Automated configuration of official Docker APT repository (`[bootstrap.apt.sources.docker]`), packages, systemd service management (`[bootstrap.services.docker]`), and user group membership.
 - **Shell & Prompt**: Configures `zsh` as default shell (`[bootstrap.user]`), installs Oh My Zsh, Powerlevel10k theme, and custom plugins (`zsh-syntax-highlighting`, `zsh-vi-mode`) via `[bootstrap.repos]`.
 - **Nerd Fonts**: Automatically downloads and installs **MesloLGS NF** to `~/.local/share/fonts/NerdFonts` for terminal & Neovim icons via `mise run fonts`.
+- **Obsidian**: Installs Obsidian note-taking app non-root via Flatpak (`--user`) from Flathub with a CLI shim (`~/.local/bin/obsidian`) via `mise run obsidian`.
 - **mise Tool Manager**: Installs mise and manages language runtimes (**Go**, **Node.js**, **Python**, **Java**) and CLI tools (**Neovim**, **Tmux**, **Clojure**, **kubectl**, **Terraform**, **Helm**, etc.), synchronizing versions from `mise.toml`.
 - **Neovim Configuration**: Neovim configuration pre-bundled from [`rahuljainosttra/nvim`](https://github.com/rahuljainosttra/nvim) (branch `nvim12-without-lazy`).
 - **Safe Dotfiles Symlinker**: Safe symlinking managed declaratively by mise (`[dotfiles]`). Keeps Git identity separate in `~/.gitconfig.local`.
@@ -98,6 +99,7 @@ You can run individual modules or preview state as needed using flags with `./se
 | `./setup.sh --packages` | Install system APT packages only (`mise bootstrap --only packages`) |
 | `./setup.sh --tools` | Install developer runtimes and tools only (`mise bootstrap --only tools`) |
 | `./setup.sh --fonts` | Download and install Nerd Fonts (`mise run fonts`) |
+| `./setup.sh --obsidian` | Install Obsidian non-root via Flatpak (`mise run obsidian`) |
 | `./setup.sh --help` | Display help and usage options |
 
 ### 🧹 Standalone Legacy Cleanup
@@ -170,4 +172,8 @@ Dotfiles are declared in `[dotfiles]` within `mise.toml`:
 4. **Launch Neovim**:
    ```bash
    nvim
+   ```
+5. **Launch Obsidian**:
+   ```bash
+   obsidian
    ```
