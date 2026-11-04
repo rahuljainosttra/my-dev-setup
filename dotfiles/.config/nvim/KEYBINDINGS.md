@@ -168,13 +168,13 @@ Seamless navigation across **Neovim window splits** and **Tmux panes** without n
 | `S` | Normal | Replace to end of line |
 | `s` | Visual | Replace highlighted selection |
 
-### Comments (`Comment.nvim`)
+### Comments (Neovim Native)
 | Shortcut | Mode | Action |
 |----------|------|--------|
 | `gcc` | Normal | Toggle line comment |
-| `gbc` | Normal | Toggle block comment |
+| `gc{motion}` | Normal | Toggle comment on motion (e.g. `gcj`, `gcip`) |
 | `gc` | Visual | Toggle comment on selection |
-| `gb` | Visual | Toggle block comment on selection |
+| `gc` | Operator-pending | Comment textobject (e.g. `dgc` to delete comment) |
 
 ---
 

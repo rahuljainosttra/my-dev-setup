@@ -23,7 +23,6 @@ local specs = {
 
 	-- Editing & Text Navigation
 	"https://github.com/windwp/nvim-autopairs",
-	"https://github.com/numToStr/Comment.nvim",
 	"https://github.com/JoosepAlviste/nvim-ts-context-commentstring",
 	"https://github.com/gbprod/substitute.nvim",
 	"https://github.com/lewis6991/gitsigns.nvim",
