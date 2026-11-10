@@ -177,6 +177,7 @@ prettier = "3.9.10"
 "npm:sass" = "1.106.1"
 pre-commit = "4.7.0"
 gh = "2.102.1"
+sentry-cli = "3.8.2"
 yarn = "1.22.22"
 
 # Cloud, Infrastructure & Identity
@@ -187,6 +188,7 @@ terraform = "1.16.6"
 flux2 = "2.9.6"
 vault = "2.2.0"
 1password-cli = "2.41.1"
+ffmpeg = "latest"
 
 [tasks.fonts]
 description = "Install MesloLGS NF fonts (Powerlevel10k recommended)"
