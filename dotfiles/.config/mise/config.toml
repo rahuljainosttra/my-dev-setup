@@ -34,6 +34,7 @@ prettier = "3.9.10"
 "npm:sass" = "1.106.1"
 pre-commit = "4.7.0"
 gh = "2.102.1"
+acli = "1.3.40-stable"
 "npm:sentry" = "0.49.0"
 yarn = "1.22.22"
 
