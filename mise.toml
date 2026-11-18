@@ -75,6 +75,9 @@ touch "$HOME/.zshrc.local"
 "~/.gitconfig" = "dotfiles/.gitconfig"
 "~/.config/nvim" = "dotfiles/.config/nvim"
 "~/.config/mise/config.toml" = "dotfiles/.config/mise/config.toml"
+"~/.gemini/antigravity-cli/settings.json" = "dotfiles/.gemini/antigravity-cli/settings.json"
+"~/.gemini/GEMINI.md" = "dotfiles/AGENTS.md"
+"~/.AGENTS.md" = "dotfiles/AGENTS.md"
 
 [bootstrap.apt.sources.docker]
 uris = "https://download.docker.com/linux/ubuntu"
@@ -190,6 +193,14 @@ flux2 = "2.9.6"
 vault = "2.2.0"
 1password-cli = "2.41.1"
 ffmpeg = "latest"
+
+[tasks.dotfiles]
+description = "Symlink dotfiles and global Antigravity/agent configurations"
+run = "mise bootstrap --only dotfiles --force-dotfiles --yes"
+
+[tasks."dotfiles:status"]
+description = "Check the status of configured dotfiles symlinks"
+run = "mise bootstrap status"
 
 [tasks.fonts]
 description = "Install MesloLGS NF fonts (Powerlevel10k recommended)"

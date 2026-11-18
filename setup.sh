@@ -66,7 +66,7 @@ Options:
   --dry-run          Simulate execution without applying changes ('mise bootstrap --dry-run')
   --fonts            Install MesloLGS NF fonts ('mise run fonts')
   --obsidian         Install Obsidian via Flatpak ('mise run obsidian')
-  --dotfiles         Symlink dotfiles only ('mise bootstrap --only dotfiles')
+  --dotfiles         Symlink dotfiles and agent configurations ('mise run dotfiles')
   --packages         Install system APT packages only ('mise bootstrap --only packages')
   --tools            Install developer runtimes and tools only ('mise bootstrap --only tools')
   --allow-root       Allow running setup as root (e.g. inside containers or CI)
@@ -165,8 +165,8 @@ case "$MODE" in
         mise -C "${SCRIPT_DIR}" run obsidian
         ;;
     dotfiles)
-        log_info "Applying dotfiles symlinks..."
-        mise -C "${SCRIPT_DIR}" bootstrap --only dotfiles --force-dotfiles "${EXTRA_ARGS[@]}"
+        log_info "Applying dotfiles symlinks via mise run dotfiles..."
+        mise -C "${SCRIPT_DIR}" run dotfiles "${EXTRA_ARGS[@]}"
         ;;
     packages)
         init_sudo
