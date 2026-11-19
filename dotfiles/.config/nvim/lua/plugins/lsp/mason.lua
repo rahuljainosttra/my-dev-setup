@@ -28,6 +28,6 @@ mason_tool_installer.setup({
 		"stylua",
 		"isort",
 		"black",
-		"ruff",
+		{ "ruff", version = "0.8.6" },
 	},
 })

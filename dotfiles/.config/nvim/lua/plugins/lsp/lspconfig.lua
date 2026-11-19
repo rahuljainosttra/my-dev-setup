@@ -12,6 +12,16 @@ vim.lsp.config("*", {
 	capabilities = capabilities,
 })
 
+vim.lsp.config("pyright", {
+	settings = {
+		python = {
+			analysis = {
+				typeCheckingMode = "off",
+			},
+		},
+	},
+})
+
 -- Enable installed servers
 local servers = { "lua_ls", "gopls", "pyright", "clojure_lsp" }
 for _, server in ipairs(servers) do
