@@ -85,7 +85,7 @@
       "src": "https://github.com/mfussenegger/nvim-lint"
     },
     "nvim-lspconfig": {
-      "rev": "e1c6a5a45d95ad22cf55c874db2ff8ab969556f0",
+      "rev": "4648fd8ba5c678d7e2db75ae44ffac269bb589d8",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-lspimport": {
@@ -93,11 +93,11 @@
       "src": "https://github.com/stevanmilic/nvim-lspimport"
     },
     "nvim-tree.lua": {
-      "rev": "dbc9d96a3633c2de85f409416ebd4a3aacf4220a",
+      "rev": "6e539e91302d2e201b078a45d214177140134523",
       "src": "https://github.com/nvim-tree/nvim-tree.lua"
     },
     "nvim-treesitter": {
-      "rev": "b706d642dd20d0922e7e92365dc73617f0fdb4ea",
+      "rev": "37e52c733ada9d8d544d53a763140ef1ba404353",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter",
       "version": "'main'"
     },
