@@ -1,9 +1,14 @@
+# Ensure user's private bin is in PATH before tool checks
+export PATH="$HOME/.local/bin:$PATH"
+
 # Auto-start tmux for interactive terminal sessions
 if [[ -z "$TMUX" && -z "$NO_TMUX" && -o interactive && "$TERM_PROGRAM" != "vscode" ]]; then
     if command -v tmux >/dev/null 2>&1; then
         exec tmux new-session -A -s main
     elif command -v mise >/dev/null 2>&1; then
         exec mise exec -- tmux new-session -A -s main
+    elif [[ -x "$HOME/.local/bin/mise" ]]; then
+        exec "$HOME/.local/bin/mise" exec -- tmux new-session -A -s main
     fi
 fi
 
